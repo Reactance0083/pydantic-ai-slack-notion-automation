@@ -76,6 +76,21 @@ Slack → POST /slack/events → verify signature
          → reply in thread with Notion URL
 ```
 
+## Health Check
+
+Confirm the server is up before registering your Slack webhook URL:
+
+```bash
+curl http://localhost:8000/health
+```
+
+Expected response:
+```json
+{"status": "ok"}
+```
+
+Paste `https://YOUR_NGROK_URL/slack/events` into Slack → App Settings → Event Subscriptions only after this returns `200 OK`. Slack will immediately send a `url_verification` challenge and reject the URL if the server doesn't respond within 3 seconds.
+
 ## Requirements
 
 - Python 3.11+
