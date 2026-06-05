@@ -63,7 +63,7 @@ class MessageIntent(BaseModel):
 
 ## Customization
 
-- Change `classifier` model in `main.py` to `claude-sonnet-4-5` for higher accuracy
+- Change `classifier` model in `main.py` to `claude-sonnet-4-6` for higher accuracy
 - Add more Notion properties by extending `create_notion_entry()`
 - Filter by specific Slack channels by checking `event.get("channel")`
 
