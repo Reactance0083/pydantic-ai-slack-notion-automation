@@ -1,3 +1,5 @@
+> **Commercial status:** Deferred commercial product. This repository may be useful as a code reference, but the product is not the active flagship and should not be promoted until its package, README, and listing are re-verified.
+
 # Slack → Notion Automation (pydantic-ai + FastAPI)
 
 Automatically captures important Slack messages into a Notion database. Uses `pydantic-ai` to classify each message — skipping casual chat, capturing action items, decisions, blockers, and questions that need follow-up.
