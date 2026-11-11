@@ -1,93 +1,46 @@
-> **Commercial status:** Deferred code reference. This repository is not the current flagship and should not be promoted as commercially ready until its package, listing, README, and download flow are re-verified.
+# Slack to Notion Workflow
 
+A FastAPI integration reference for converting selected Slack messages into structured Notion records.
 
-## Current Status
+**[Portfolio](https://github.com/Reactance0083)** · **Status: implementation reference; live integration not revalidated in this refresh**
 
-This repository is a deferred code reference, not the current Stage 1 flagship. It may be useful for learning, but it should not be promoted as commercially ready until its package, listing, README, and download flow are re-verified.
+## Implemented flow
 
-# Slack → Notion Automation (pydantic-ai + FastAPI)
+1. Receive `POST /slack/events`.
+2. Verify the Slack signature and request age.
+3. Handle the URL-verification challenge or select eligible user messages.
+4. Classify with a typed PydanticAI output.
+5. Create a Notion page and post its link in the Slack thread.
 
-Automatically captures important Slack messages into a Notion database. Uses `pydantic-ai` to classify each message — skipping casual chat, capturing action items, decisions, blockers, and questions that need follow-up.
+The schema includes title, category, priority, summary, tags, and a capture decision. The code skips bot messages, subtypes, and very short messages before classification.
 
-## What It Does
+## Setup
 
-1. Receives Slack Events API webhooks
-2. Verifies HMAC-SHA256 signature (production-safe)
-3. Classifies the message with `claude-haiku-4-5` via pydantic-ai
-4. If worth capturing → creates a Notion database entry with title, category, priority, tags, and summary
-5. Replies in the Slack thread with a link to the Notion page
-
-## Notion Database Schema
-
-Your Notion database needs these properties:
-
-| Property | Type |
-|----------|------|
-| Name | Title |
-| Category | Select |
-| Priority | Select |
-| Tags | Multi-select |
-| Source | Rich text |
-
-## Quick Start
+The application is in `main.py`.
 
 ```bash
-pip install -r requirements.txt
-cp .env.example .env
-# Fill in .env with your credentials
-uvicorn main:app --reload --port 8000
+python -m venv .venv
+# Activate the environment for your shell.
+python -m pip install -r requirements.txt
+# Copy .env.example to .env and configure the variables below.
+python -m uvicorn main:app --host 127.0.0.1 --port 8000
 ```
 
-Expose locally with ngrok:
-```bash
-ngrok http 8000
-# Paste https://YOUR_NGROK_URL/slack/events into Slack App → Event Subscriptions
-```
+Required configuration: `SLACK_BOT_TOKEN`, `SLACK_SIGNING_SECRET`, `NOTION_API_KEY`, `NOTION_DATABASE_ID`, and `ANTHROPIC_API_KEY`.
 
-## What Gets Captured
+The Notion database must have `Name` (title), `Category` and `Priority` (select), `Tags` (multi-select), and `Source` (rich text). External integration tests create records and messages, so use a designated test channel and database.
 
-| Category | Examples |
-|----------|---------|
-| `task` | "Can you update the auth flow by Friday?" |
-| `decision` | "We're switching to Postgres for the new service" |
-| `blocker` | "Can't deploy — CI is broken on main" |
-| `question` | "Does anyone know the Stripe webhook retry policy?" |
-| `info` | "FYI the API rate limit is 1000 req/min" |
+## What to inspect
 
-Skipped: "lol", "ok thanks", reactions, bot messages, edited messages.
+- `MessageIntent`: typed classification output.
+- `verify_slack_signature`: HMAC comparison and five-minute age check.
+- `process_message`: filtering, classification, and service handoff.
+- `create_notion_entry`: structured database properties and source context.
 
-## Structured Output (pydantic-ai)
+## Limits
 
-```python
-class MessageIntent(BaseModel):
-    should_capture: bool
-    title: str           # clean 5-10 word title
-    category: str        # task | decision | question | blocker | info
-    priority: str        # high | medium | low
-    summary: str         # 1-sentence description
-    tags: list[str]      # up to 4 tags
-```
+This is a small integration reference, without a durable queue, event deduplication, retry orchestration, or an independent accuracy evaluation. Current PydanticAI and service compatibility must be verified before use; the source uses `result_type` and `result.data`.
 
-## Customization
+Review malformed-request handling, webhook replay/retry behavior, permissions, and service responses before deployment. Signature verification alone does not make a complete production service.
 
-- Change `classifier` model in `main.py` to `claude-sonnet-4-6` for higher accuracy
-- Add more Notion properties by extending `create_notion_entry()`
-- Filter by specific Slack channels by checking `event.get("channel")`
-
-## Architecture
-
-```
-Slack → POST /slack/events → verify signature
-         → classify (pydantic-ai, async background task)
-         → create_notion_entry()
-         → reply in thread with Notion URL
-```
-
-## Requirements
-
-- Python 3.11+
-- Slack App with `chat:write`, `channels:history` bot scopes
-- Notion integration with access to your database
-- Anthropic API key (uses claude-haiku-4-5, ~$0.001/100 messages)
-
----
+Developed with AI assistance. Documentation reviewed against source on November 10, 2026.
