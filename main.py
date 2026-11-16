@@ -42,7 +42,7 @@ class MessageIntent(BaseModel):
 # ── pydantic-ai classifier ────────────────────────────────────────────────────
 classifier = Agent(
     "anthropic:claude-haiku-4-5",
-    result_type=MessageIntent,
+    output_type=MessageIntent,
     system_prompt=(
         "Classify Slack messages to decide if they should be saved to Notion. "
         "Capture: action items, decisions, blockers, questions needing follow-up, important announcements. "
@@ -85,11 +85,15 @@ async def create_notion_entry(
 
 # ── Slack signature verification ──────────────────────────────────────────────
 def verify_slack_signature(body: bytes, timestamp: str, signature: str) -> bool:
-    if abs(time.time() - int(timestamp)) > 300:
+    try:
+        request_time = int(timestamp)
+    except (TypeError, ValueError):
         return False
-    base_string = f"v0:{timestamp}:{body.decode()}"
+    if abs(time.time() - request_time) > 300:
+        return False
+    base_string = b"v0:" + timestamp.encode() + b":" + body
     expected = "v0=" + hmac.new(
-        SLACK_SIGNING_SECRET.encode(), base_string.encode(), hashlib.sha256
+        SLACK_SIGNING_SECRET.encode(), base_string, hashlib.sha256
     ).hexdigest()
     return hmac.compare_digest(expected, signature)
 
@@ -132,7 +136,7 @@ async def process_message(event: dict):
     result = await classifier.run(
         f"Slack channel: #{channel}\nUser ID: {user}\nMessage: {text}"
     )
-    intent = result.data
+    intent = result.output
 
     if not intent.should_capture:
         return
@@ -160,3 +164,4 @@ def health():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+

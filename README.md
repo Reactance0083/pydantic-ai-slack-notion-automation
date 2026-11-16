@@ -2,7 +2,7 @@
 
 A FastAPI integration reference for converting selected Slack messages into structured Notion records.
 
-**[Portfolio](https://github.com/Reactance0083)** · **Status: implementation reference; live integration not revalidated in this refresh**
+**[Portfolio](https://github.com/Reactance0083)** · **Status: integration prototype; offline regression checks passed November 16, 2026**
 
 ## Implemented flow
 
@@ -37,10 +37,15 @@ The Notion database must have `Name` (title), `Category` and `Priority` (select)
 - `process_message`: filtering, classification, and service handoff.
 - `create_notion_entry`: structured database properties and source context.
 
+## Offline checks
+
+Run `python -m unittest test_workflow -v`. The tests cover signature acceptance/rejection, malformed timestamps, the typed capture/skip decision, and mocked Notion/Slack handoffs. They use PydanticAI's test model and mocked HTTP responses, and send no real messages or tickets. They do not measure model accuracy or prove a live deployment.
+
 ## Limits
 
-This is a small integration reference, without a durable queue, event deduplication, retry orchestration, or an independent accuracy evaluation. Current PydanticAI and service compatibility must be verified before use; the source uses `result_type` and `result.data`.
+This is a small integration reference, without a durable queue, event deduplication, retry orchestration, or an independent accuracy evaluation. PydanticAI calls use `output_type` and `result.output`. The dependency file pins the tested PydanticAI and Anthropic SDK versions. Live service compatibility and behavior still require end-to-end verification.
 
-Review malformed-request handling, webhook replay/retry behavior, permissions, and service responses before deployment. Signature verification alone does not make a complete production service.
+Review webhook replay/retry behavior, permissions, and service responses before deployment. Signature verification alone does not make a complete production service.
 
-Developed with AI assistance. Documentation reviewed against source on November 10, 2026.
+Developed with AI assistance. Documentation reviewed against source on November 16, 2026.
+
